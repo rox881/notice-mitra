@@ -7,7 +7,7 @@ from app.eligibility import StudentProfile, evaluate_eligibility
 from app.extractor import extract_canonical_notice
 from app.parser import parse_document, parse_raw_text
 from app.translator import get_localized_notice
-
+from app.chat import ask_notice_followup
 app = FastAPI(title="Multilingual College Notice Assistant API")
 
 app.add_middleware(
@@ -28,6 +28,12 @@ class EligibilityRequest(BaseModel):
 class TranslateRequest(BaseModel):
     canonical: dict
     lang: str = "en"  # "en", "hi", or "mr"
+
+class ChatRequest(BaseModel):
+    clauses: list[dict]
+    question: str
+    lang: str = "en"  # "en", "hi", or "mr"
+    profile: Optional[StudentProfile] = None
 
 
 @app.get("/health")
@@ -114,3 +120,17 @@ def translate_notice_endpoint(payload: TranslateRequest):
         return get_localized_notice(payload.canonical, payload.lang)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
+
+@app.post("/api/notices/chat")
+def chat_notice_endpoint(payload: ChatRequest):
+    """Stage 4: Grounded Multilingual Follow-Up Chat locked to [C1..Cn]."""
+    try:
+        profile_dict = payload.profile.model_dump() if payload.profile else None
+        return ask_notice_followup(
+            clauses=payload.clauses,
+            question=payload.question,
+            lang=payload.lang,
+            student_profile=profile_dict,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
