@@ -8,6 +8,9 @@ from app.extractor import extract_canonical_notice
 from app.parser import parse_document, parse_raw_text
 from app.translator import get_localized_notice
 from app.chat import ask_notice_followup
+from pathlib import Path
+from fastapi.responses import FileResponse
+
 app = FastAPI(title="Multilingual College Notice Assistant API")
 
 app.add_middleware(
@@ -134,3 +137,10 @@ def chat_notice_endpoint(payload: ChatRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
+
+STATIC_INDEX = Path(__file__).resolve().parent.parent / "static" / "index.html"
+
+
+@app.get("/", include_in_schema=False)
+def serve_ui():
+    return FileResponse(STATIC_INDEX)

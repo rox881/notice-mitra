@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NoticeMitra — Verifiable Multilingual Notice Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: "class" };
+  </script>
+  <style>
+    .clause-highlight {
+      background-color: #fef08a !important;
+      border-color: #eab308 !important;
+      color: #1e293b !important;
+      box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.45);
+      transition: all 0.25s ease;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors">
+
+  <!-- Top Navbar -->
+  <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-5 py-3 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-20">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-base">N</div>
+      <div>
+        <h1 class="font-bold text-slate-900 dark:text-white leading-tight text-sm sm:text-base">NoticeMitra</h1>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Verifiable Multilingual College Notice Intelligence</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2.5 flex-wrap">
+      <!-- Language Switcher -->
+      <div class="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-1" role="group">
+        <button type="button" onclick="switchLanguage('en')" id="lang-en" class="lang-btn px-2.5 py-1 text-xs font-semibold rounded-md bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 shadow-sm">English</button>
+        <button type="button" onclick="switchLanguage('hi')" id="lang-hi" class="lang-btn px-2.5 py-1 text-xs font-semibold rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">हिंदी</button>
+        <button type="button" onclick="switchLanguage('mr')" id="lang-mr" class="lang-btn px-2.5 py-1 text-xs font-semibold rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">मराठी</button>
+      </div>
+
+      <!-- Student Profile Button -->
+      <button type="button" onclick="toggleProfileDrawer()" class="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-1.5">
+        <span>🎓</span>
+        <span id="profile-summary-badge">Profile: CS · TE · 8.0 CGPA</span>
+      </button>
+
+      <!-- Dark / Light Theme Toggle -->
+      <button type="button" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Dark/Light Theme" class="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
+        🌙 Dark
+      </button>
+    </div>
+  </header>
+
+  <!-- Collapsible Student Profile Drawer -->
+  <section id="profile-drawer" class="hidden bg-indigo-50/80 dark:bg-slate-900/95 border-b border-indigo-100 dark:border-slate-800 px-6 py-4">
+    <div class="max-w-[1600px] mx-auto">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold text-indigo-950 dark:text-indigo-300">Student Profile (Saved locally — instant 0-token eligibility check)</h2>
+        <button type="button" onclick="toggleProfileDrawer()" class="text-xs text-indigo-700 dark:text-indigo-400 hover:underline">Close</button>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+        <div>
+          <label class="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Branch</label>
+          <select id="prof-branch" onchange="saveProfile()" class="w-full text-xs rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 border">
+            <option value="CS">CS</option>
+            <option value="IT">IT</option>
+            <option value="AIML">AIML</option>
+            <option value="EXTC">EXTC</option>
+            <option value="MECH">MECH</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Year</label>
+          <select id="prof-year" onchange="saveProfile()" class="w-full text-xs rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 border">
+            <option value="FE">FE (1st Year)</option>
+            <option value="SE">SE (2nd Year)</option>
+            <option value="TE" selected>TE (3rd Year)</option>
+            <option value="BE">BE (4th Year)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Category</label>
+          <select id="prof-category" onchange="saveProfile()" class="w-full text-xs rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 border">
+            <option value="OPEN">OPEN</option>
+            <option value="OBC">OBC</option>
+            <option value="SC">SC</option>
+            <option value="ST">ST</option>
+            <option value="EBC">EBC</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">CGPA</label>
+          <input id="prof-cgpa" type="number" step="0.1" value="8.0" onchange="saveProfile()" class="w-full text-xs rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 border" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Family Income (₹)</label>
+          <input id="prof-income" type="number" step="50000" value="450000" onchange="saveProfile()" class="w-full text-xs rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 border" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Active Backlogs</label>
+          <input id="prof-backlogs" type="number" min="0" value="0" onchange="saveProfile()" class="w-full text-xs rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 border" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3-COLUMN WORKSPACE (Ratio: 3 : 5 : 4 — Thinnest Left Input | Wide Center Analysis | Right Chat) -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+
+    <!-- COLUMN 1 (3 cols — Thinnest): Upload / Paste Input -->
+    <div class="lg:col-span-3 flex flex-col gap-4 lg:sticky lg:top-20">
+      <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">1. Notice Input</h2>
+          <button type="button" onclick="loadSampleNotice()" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-medium">Sample</button>
+        </div>
+
+        <label class="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Upload PDF / Image / DOCX</label>
+        <input id="file-input" type="file" accept=".pdf,.png,.jpg,.jpeg,.docx" class="block w-full text-[11px] text-slate-500 dark:text-slate-400 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-indigo-50 dark:file:bg-indigo-950 file:text-indigo-700 dark:file:text-indigo-300 hover:file:bg-indigo-100 mb-3" />
+
+        <label class="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Or Paste WhatsApp Text</label>
+        <textarea id="raw-text-input" rows="6" placeholder="Paste circular text here..." class="w-full text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"></textarea>
+
+        <button id="analyze-btn" type="button" onclick="analyzeNotice()" class="w-full py-2.5 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer">
+          <svg id="analyze-spinner" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <span id="analyze-btn-text">Analyze & Verify</span>
+        </button>
+
+        <div id="status-banner" class="hidden mt-3 p-2 rounded-lg text-[11px] font-medium flex items-start gap-1.5"></div>
+      </div>
+    </div>
+
+    <!-- COLUMN 2 (5 cols — Center): Eligibility + Multilingual Summary + Source Clauses -->
+    <div class="lg:col-span-5 flex flex-col gap-4">
+
+      <!-- Eligibility Verdict Banner -->
+      <div id="eligibility-card" class="hidden bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <span id="elig-badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">Eligible</span>
+            <span class="text-[11px] text-slate-500 dark:text-slate-400">Profile eligibility check</span>
+          </div>
+          <span id="elig-citation-slot"></span>
+        </div>
+        <div id="elig-details" class="mt-2 text-xs text-slate-600 dark:text-slate-300 space-y-1"></div>
+        <div id="edge-warnings" class="mt-2.5 space-y-1.5"></div>
+      </div>
+
+      <!-- Localized Summary, Deadlines & Docs -->
+      <div id="summary-card" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
+        <div id="empty-state" class="text-center py-10">
+          <p class="text-sm font-medium text-slate-700 dark:text-slate-300">No notice analyzed yet</p>
+          <p class="text-xs text-slate-400 mt-1">Upload a file or click "Sample" on the left to begin.</p>
+        </div>
+
+        <div id="notice-content" class="hidden space-y-4">
+          <div class="border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span id="notice-category" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">General</span>
+              <span id="notice-urgency" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300">Medium</span>
+              <span id="cache-indicator" class="text-[10px] text-slate-400"></span>
+            </div>
+            <h2 id="notice-title" class="text-sm font-bold text-slate-900 dark:text-white leading-snug"></h2>
+          </div>
+
+          <div>
+            <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Key Action Summary</h3>
+            <ul id="summary-bullets" class="space-y-2 text-xs text-slate-700 dark:text-slate-300 leading-relaxed"></ul>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div class="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-3 border border-slate-100 dark:border-slate-800">
+              <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Deadlines & Dates</h3>
+              <ul id="deadlines-list" class="space-y-1.5 text-xs text-slate-700 dark:text-slate-300"></ul>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-3 border border-slate-100 dark:border-slate-800">
+              <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Required Documents</h3>
+              <ul id="docs-list" class="space-y-1.5 text-xs text-slate-700 dark:text-slate-300"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Indexed Source Clauses Panel -->
+      <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex flex-col max-h-[340px]">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Source Clauses <span id="clause-count" class="font-normal text-slate-400">(0)</span></h2>
+          <span class="text-[10px] text-slate-400">Click any [C#] tag to highlight</span>
+        </div>
+        <div id="clauses-container" class="flex-1 overflow-y-auto space-y-1.5 pr-1 text-xs">
+          <p class="text-slate-400 italic py-6 text-center">Indexed clauses [C1..Cn] appear here.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- COLUMN 3 (4 cols — Rightmost): Grounded Multilingual Follow-Up Chat -->
+    <div class="lg:col-span-4 flex flex-col lg:sticky lg:top-20">
+      <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex flex-col h-[calc(100vh-6.5rem)] min-h-[480px]">
+        <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">Grounded Notice Chat</h2>
+            <p class="text-[10px] text-slate-400">Answers strictly from [C1..Cn] in selected language</p>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-semibold">Zero-Hallucination</span>
+        </div>
+
+        <div id="chat-history" class="flex-1 overflow-y-auto space-y-3 p-2.5 bg-slate-50 dark:bg-slate-950/70 rounded-lg border border-slate-100 dark:border-slate-800 mb-3 text-xs">
+          <p class="text-slate-400 italic">Ask anything about the notice in English, Hindi, or Marathi (e.g., "Can I apply with 1 backlog?").</p>
+        </div>
+
+        <form onsubmit="sendChat(event)" class="flex gap-2">
+          <input id="chat-input" type="text" placeholder="Ask a question..." class="flex-1 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <button type="submit" id="chat-btn" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold cursor-pointer">Ask</button>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const state = {
+      clauses: [],
+      canonical: null,
+      lang: "en",
+      profile: {
+        branch: "CS",
+        year: "TE",
+        category: "OPEN",
+        cgpa: 8.0,
+        family_income: 450000,
+        active_backlogs: 0
+      }
+    };
+
+    // Theme management (Light / Dark saved in localStorage)
+    function initTheme() {
+      const savedTheme = localStorage.getItem("noticemitra_theme") || "light";
+      applyTheme(savedTheme);
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains("dark");
+      const next = isDark ? "light" : "dark";
+      localStorage.setItem("noticemitra_theme", next);
+      applyTheme(next);
+    }
+
+    function applyTheme(theme) {
+      const btn = document.getElementById("theme-toggle-btn");
+      if (theme === "dark") {
+        document.documentElement.classList.add("dark");
+        btn.textContent = "☀️ Light";
+      } else {
+        document.documentElement.classList.remove("dark");
+        btn.textContent = "🌙 Dark";
+      }
+    }
+
+    function initProfile() {
+      const saved = localStorage.getItem("noticemitra_profile");
+      if (saved) {
+        state.profile = JSON.parse(saved);
+        document.getElementById("prof-branch").value = state.profile.branch;
+        document.getElementById("prof-year").value = state.profile.year;
+        document.getElementById("prof-category").value = state.profile.category;
+        document.getElementById("prof-cgpa").value = state.profile.cgpa ?? "";
+        document.getElementById("prof-income").value = state.profile.family_income ?? "";
+        document.getElementById("prof-backlogs").value = state.profile.active_backlogs ?? 0;
+      }
+      updateProfileBadge();
+    }
+
+    function saveProfile() {
+      state.profile = {
+        branch: document.getElementById("prof-branch").value,
+        year: document.getElementById("prof-year").value,
+        category: document.getElementById("prof-category").value,
+        cgpa: parseFloat(document.getElementById("prof-cgpa").value) || null,
+        family_income: parseInt(document.getElementById("prof-income").value) || null,
+        active_backlogs: parseInt(document.getElementById("prof-backlogs").value) || 0
+      };
+      localStorage.setItem("noticemitra_profile", JSON.stringify(state.profile));
+      updateProfileBadge();
+      if (state.canonical) runEligibilityCheck();
+    }
+
+    function updateProfileBadge() {
+      const p = state.profile;
+      document.getElementById("profile-summary-badge").textContent =
+        `${p.branch} · ${p.year} · ${p.category} · ${p.cgpa ?? "-"} CGPA`;
+    }
+
+    function toggleProfileDrawer() {
+      document.getElementById("profile-drawer").classList.toggle("hidden");
+    }
+
+    function loadSampleNotice() {
+      document.getElementById("file-input").value = "";
+      document.getElementById("raw-text-input").value =
+        "OFFICE OF THE PRINCIPAL - SCHOLARSHIP CELL\n" +
+        "Notice No: APSIT/SCH/2026-27/14\n" +
+        "All Second Year (SE) and Third Year (TE) students of CS, IT, and AIML branches are informed that applications for the Merit-cum-Means Tuition Fee Waiver Scheme are now open.\n" +
+        "Eligibility Criteria: Minimum 7.5 CGPA in the previous academic year, annual family income below Rs. 6,00,000, and zero active backlogs (ATKT).\n" +
+        "Important Note: Students already availing MahaDBT EBC/OBC/SC/ST scholarships or residing in the college hostel are NOT eligible for this scheme.\n" +
+        "Required Documents: Previous semester marksheet, Tehsildar Income Certificate, and College ID Card copy.\n" +
+        "Last date to submit the physical form at Admin Window No. 3 is 30th November 2026 before 4:00 PM.";
+      showStatus("Sample circular loaded. Click 'Analyze & Verify'.", "info");
+    }
+
+    function showStatus(message, type = "info") {
+      const banner = document.getElementById("status-banner");
+      banner.className = "mt-3 p-2 rounded-lg text-[11px] font-medium flex items-start gap-1.5 border";
+      if (type === "error") {
+        banner.classList.add("bg-rose-50", "dark:bg-rose-950/60", "text-rose-800", "dark:text-rose-300", "border-rose-200", "dark:border-rose-900");
+        banner.innerHTML = `<span>❌</span><span>${message}</span>`;
+      } else if (type === "success") {
+        banner.classList.add("bg-emerald-50", "dark:bg-emerald-950/60", "text-emerald-800", "dark:text-emerald-300", "border-emerald-200", "dark:border-emerald-900");
+        banner.innerHTML = `<span>✅</span><span>${message}</span>`;
+      } else {
+        banner.classList.add("bg-indigo-50", "dark:bg-indigo-950/60", "text-indigo-800", "dark:text-indigo-300", "border-indigo-200", "dark:border-indigo-900");
+        banner.innerHTML = `<span>⏳</span><span>${message}</span>`;
+      }
+    }
+
+    // Compact superscript-style citation badge
+    function citeChip(code) {
+      if (!code) return "";
+      return `<button type="button" onclick="jumpToClause('${code}')" title="Verify in clause ${code}" class="inline-flex items-center px-1 py-0 rounded text-[9px] font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800 hover:bg-indigo-600 hover:text-white transition ml-1 align-baseline cursor-pointer">${code}</button>`;
+    }
+
+    function jumpToClause(code) {
+      document.querySelectorAll(".clause-item").forEach(el => el.classList.remove("clause-highlight"));
+      const target = document.getElementById(`clause-${code}`);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.classList.add("clause-highlight");
+      }
+    }
+
+    async function analyzeNotice() {
+      const fileInput = document.getElementById("file-input");
+      const rawText = document.getElementById("raw-text-input").value.trim();
+      const btn = document.getElementById("analyze-btn");
+      const btnText = document.getElementById("analyze-btn-text");
+      const spinner = document.getElementById("analyze-spinner");
+
+      if (!fileInput.files.length && !rawText) {
+        showStatus("Choose a file or paste notice text first.", "error");
+        return;
+      }
+
+      const formData = new FormData();
+      if (fileInput.files.length) {
+        formData.append("file", fileInput.files[0]);
+      } else {
+        formData.append("raw_text", rawText);
+      }
+
+      btn.disabled = true;
+      spinner.classList.remove("hidden");
+      btnText.textContent = "Processing...";
+      showStatus("Step 1/3: Indexing clauses & extracting rules...", "info");
+
+      try {
+        const res = await fetch("/api/notices/analyze", { method: "POST", body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || `Server error (${res.status})`);
+
+        state.clauses = data.clauses;
+        state.canonical = data.canonical;
+        renderClauses(data.clauses);
+
+        showStatus("Step 2/3: Checking profile eligibility...", "info");
+        await runEligibilityCheck();
+
+        showStatus("Step 3/3: Localizing notice view...", "info");
+        await switchLanguage(state.lang);
+
+        document.getElementById("chat-history").innerHTML =
+          `<p class="text-slate-400 italic">Ready! Ask any question about "${data.canonical.title}".</p>`;
+
+        showStatus(`Done! ${data.total_clauses} clauses indexed & verified.`, "success");
+      } catch (err) {
+        console.error("Analyze error:", err);
+        showStatus(err.message, "error");
+      } finally {
+        btn.disabled = false;
+        spinner.classList.add("hidden");
+        btnText.textContent = "Analyze & Verify";
+      }
+    }
+
+    function renderClauses(clauses) {
+      document.getElementById("clause-count").textContent = `(${clauses.length})`;
+      const container = document.getElementById("clauses-container");
+      container.innerHTML = clauses.map(c => `
+        <div id="clause-${c.clause_code}" class="clause-item p-2 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/50 flex items-start gap-2">
+          <span class="shrink-0 px-1.5 py-0.5 rounded bg-slate-800 dark:bg-slate-700 text-white font-mono text-[9px] font-bold mt-0.5">${c.clause_code}</span>
+          <span class="text-slate-700 dark:text-slate-300 leading-relaxed">${c.raw_text}</span>
+        </div>
+      `).join("");
+    }
+
+    async function runEligibilityCheck() {
+      if (!state.canonical) return;
+      const res = await fetch("/api/notices/eligibility", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ canonical: state.canonical, profile: state.profile })
+      });
+      const elig = await res.json();
+
+      const card = document.getElementById("eligibility-card");
+      card.classList.remove("hidden");
+
+      const badge = document.getElementById("elig-badge");
+      badge.textContent = elig.status;
+      badge.className = "px-2.5 py-1 rounded-full text-xs font-bold " + (
+        elig.status === "Eligible" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" :
+        elig.status === "Not Eligible" ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300" :
+        "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300"
+      );
+
+      document.getElementById("elig-citation-slot").innerHTML = citeChip(elig.citation);
+
+      const details = [];
+      elig.passed_checks.forEach(p => details.push(`<div class="text-emerald-700 dark:text-emerald-400">✓ ${p}</div>`));
+      elig.failed_reasons.forEach(f => details.push(`<div class="text-rose-700 dark:text-rose-400 font-medium">✕ ${f}</div>`));
+      document.getElementById("elig-details").innerHTML = details.join("");
+
+      const warnings = document.getElementById("edge-warnings");
+      warnings.innerHTML = (elig.edge_warnings || []).map(w => `
+        <div class="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200 text-xs">
+          ⚠️ <strong>Conditional Rule:</strong> ${w.text} ${citeChip(w.citation)}
+        </div>
+      `).join("");
+    }
+
+    async function switchLanguage(lang) {
+      state.lang = lang;
+      document.querySelectorAll(".lang-btn").forEach(btn => {
+        btn.className = "lang-btn px-2.5 py-1 text-xs font-semibold rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white";
+      });
+      document.getElementById(`lang-${lang}`).className =
+        "lang-btn px-2.5 py-1 text-xs font-semibold rounded-md bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 shadow-sm";
+
+      if (!state.canonical) return;
+
+      document.getElementById("cache-indicator").textContent = "Loading...";
+      const res = await fetch("/api/notices/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ canonical: state.canonical, lang })
+      });
+      const view = await res.json();
+
+      document.getElementById("empty-state").classList.add("hidden");
+      document.getElementById("notice-content").classList.remove("hidden");
+
+      document.getElementById("notice-title").textContent = view.title;
+      document.getElementById("notice-category").textContent = view.category;
+      document.getElementById("notice-urgency").textContent = `Urgency: ${view.urgency}`;
+      document.getElementById("cache-indicator").textContent =
+        view.lang === "en" ? "Canonical English" : (view.cached ? "⚡ Cached (0 tokens)" : "✨ Translated & Cached");
+
+      document.getElementById("summary-bullets").innerHTML = (view.summary_bullets || []).map(b =>
+        `<li class="flex items-start gap-2"><span class="text-indigo-600 dark:text-indigo-400 font-bold">•</span><span>${b.text}${citeChip(b.citation)}</span></li>`
+      ).join("");
+
+      document.getElementById("deadlines-list").innerHTML = view.deadlines?.length
+        ? view.deadlines.map(d => `<li><strong>${d.date}:</strong> ${d.event}${citeChip(d.citation)}</li>`).join("")
+        : `<li class="text-slate-400 italic">No specific deadline mentioned</li>`;
+
+      document.getElementById("docs-list").innerHTML = view.required_documents?.length
+        ? view.required_documents.map(doc => `<li>• ${doc.text}${citeChip(doc.citation)}</li>`).join("")
+        : `<li class="text-slate-400 italic">No documents required</li>`;
+    }
+
+    async function sendChat(e) {
+      e.preventDefault();
+      const input = document.getElementById("chat-input");
+      const question = input.value.trim();
+      if (!question || !state.clauses.length) return;
+
+      const history = document.getElementById("chat-history");
+      if (history.querySelector("p.italic")) history.innerHTML = "";
+
+      history.innerHTML += `<div class="text-right"><span class="inline-block bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-left max-w-[90%]">${question}</span></div>`;
+      input.value = "";
+      history.scrollTop = history.scrollHeight;
+
+      const btn = document.getElementById("chat-btn");
+      btn.disabled = true;
+
+      try {
+        const res = await fetch("/api/notices/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clauses: state.clauses,
+            question,
+            lang: state.lang,
+            profile: state.profile
+          })
+        });
+        const reply = await res.json();
+        const chips = (reply.citations || []).slice(0, 3).map(c => citeChip(c)).join("");
+        const badge = reply.found_in_notice
+          ? ""
+          : `<span class="block text-[10px] font-semibold text-amber-700 dark:text-amber-300 mb-0.5">⚠️ Not explicitly found in notice</span>`;
+
+        history.innerHTML += `
+          <div class="text-left">
+            <div class="inline-block bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 px-3 py-2 rounded-lg max-w-[95%] leading-relaxed">
+              ${badge}
+              <span>${reply.answer}</span>
+              ${chips ? `<span class="inline-flex flex-wrap gap-0.5 ml-1">${chips}</span>` : ""}
+            </div>
+          </div>`;
+      } catch (err) {
+        history.innerHTML += `<div class="text-rose-600 dark:text-rose-400">Error: ${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
+        history.scrollTop = history.scrollHeight;
+      }
+    }
+
+    initTheme();
+    initProfile();
+  </script>
+</body>
+</html>

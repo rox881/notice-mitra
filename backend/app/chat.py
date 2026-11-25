@@ -10,7 +10,7 @@ class ChatReply(BaseModel):
     )
     citations: list[str] = Field(
         default_factory=list,
-        description="List of exact clause codes used to answer (e.g. ['C2', 'C4']), or [] if not mentioned.",
+        description="Up to 3 most specific clause codes directly proving the answer (e.g. ['C14', 'C22']), or [] if not mentioned.",
     )
     found_in_notice: bool = Field(
         description="True if the answer was explicitly found in the clauses; False if absent."
@@ -51,7 +51,7 @@ def ask_notice_followup(
         "1. NEVER guess, assume, or use outside knowledge. If the answer is not explicitly stated "
         "in the clauses, set 'found_in_notice' to false, 'citations' to [], and politely say in the "
         "requested language that this detail is not mentioned in the notice and to check with the college admin office.\n"
-        "2. Every factual statement MUST be backed by exact clause codes in 'citations' (e.g., ['C2', 'C5']).\n"
+        "2. Cite ONLY the 1 to 3 most directly relevant clause codes in 'citations'—never list unnecessary background clauses.\n"
         f"3. {lang_rule}"
     )
 
@@ -70,6 +70,6 @@ def ask_notice_followup(
     )
 
     parsed = ChatReply.model_validate_json(raw_json)
-    # Deterministic guardrail: keep only real C# codes from this notice
-    parsed.citations = [code for code in parsed.citations if code in valid_codes]
+    # Deterministic guardrail: keep only real C# codes (capped at 3)
+    parsed.citations = [code for code in parsed.citations if code in valid_codes][:3]
     return parsed.model_dump()

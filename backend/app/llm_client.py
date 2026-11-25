@@ -11,18 +11,28 @@ load_dotenv()
 gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY")) if os.getenv("GROQ_API_KEY") else None
 
+# Broad multi-model Gemini chain (free-tier eligible & active)
 GEMINI_MODELS = [
     "gemini-3.5-flash-lite",
+    "gemini-4-hydrogen",
     "gemini-3.8-flash",
-    "gemini-4-hydrogen"
+    "gemini-3.6-flash",
+    "gemini-3.1-flash-lite",
 ]
-GROQ_MODEL = [
+
+# Fast Groq fallback models
+GROQ_MODELS = [
     "openai/gpt-oss-120b",
-    "openai/gpt-oss-20b"
+    "openai/gpt-oss-20b",
 ]
 
 
-def _call_gemini(contents: str, system_instruction: str | None, response_schema, temperature: float) -> str:
+def _call_gemini(
+    contents: str,
+    system_instruction: str | None,
+    response_schema,
+    temperature: float,
+) -> str:
     config_kwargs = {"temperature": temperature}
     if system_instruction:
         config_kwargs["system_instruction"] = system_instruction
@@ -34,24 +44,30 @@ def _call_gemini(contents: str, system_instruction: str | None, response_schema,
     last_error = None
 
     for model_id in GEMINI_MODELS:
-        for attempt in range(2):
-            try:
-                res = gemini_client.models.generate_content(
-                    model=model_id,
-                    contents=contents,
-                    config=config,
-                )
-                return res.text
-            except APIError as e:
-                last_error = e
-                if e.code in (429, 503):
-                    time.sleep(0.8 * (attempt + 1))
-                    continue
-                break
-    raise RuntimeError(f"Gemini unavailable: {last_error}")
+        try:
+            res = gemini_client.models.generate_content(
+                model=model_id,
+                contents=contents,
+                config=config,
+            )
+            return res.text
+        except APIError as e:
+            last_error = e
+            # Immediately fail over to next Gemini model on 503/429/404
+            if e.code in (404, 429, 500, 503):
+                time.sleep(0.3)
+                continue
+            raise
+
+    raise RuntimeError(f"Gemini unavailable across all {len(GEMINI_MODELS)} models: {last_error}")
 
 
-def _call_groq(contents: str, system_instruction: str | None, response_schema, temperature: float) -> str:
+def _call_groq(
+    contents: str,
+    system_instruction: str | None,
+    response_schema,
+    temperature: float,
+) -> str:
     if not groq_client:
         raise RuntimeError("GROQ_API_KEY not configured in .env")
 
@@ -82,7 +98,8 @@ def _call_groq(contents: str, system_instruction: str | None, response_schema, t
             last_error = e
             continue
 
-    raise RuntimeError(f"Groq unavailable: {last_error}")
+    raise RuntimeError(f"Groq unavailable across all {len(GROQ_MODELS)} models: {last_error}")
+
 
 def generate_with_fallback(
     contents: str,
@@ -92,9 +109,7 @@ def generate_with_fallback(
     prefer: str = "gemini",
 ) -> str:
     """
-    Routes AI calls between Gemini and Groq with automatic cross-provider failover.
-    - prefer='gemini': Best for structured extraction & Hindi/Marathi translation (falls back to Groq on 503).
-    - prefer='groq': Ultra-fast inference for Stage 4 follow-up chat (falls back to Gemini if needed).
+    Routes AI calls across 5 Gemini models + 2 Groq models with instant failover.
     """
     providers = [_call_gemini, _call_groq] if prefer == "gemini" else [_call_groq, _call_gemini]
     errors = []
