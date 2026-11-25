@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+pymupdf
+rapidocr-onnxruntime
+pillow
+python-docx
+google-genai
+python-dotenv
+groq

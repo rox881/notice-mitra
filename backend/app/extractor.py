@@ -1,14 +1,5 @@
-import os
-from dotenv import load_dotenv
-from google import genai
-from google.genai import types
-
+from app.llm_client import generate_with_fallback
 from app.schemas import CanonicalNotice
-
-load_dotenv()
-
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-MODEL_ID = "gemini-3.5-flash-lite"
 
 SYSTEM_PROMPT = """
 You are a precise college notice analyzer. You will be given numbered clauses [C1], [C2], ... from an official college notice.
@@ -51,17 +42,13 @@ def extract_canonical_notice(clauses: list[dict]) -> dict:
     valid_codes = {c["clause_code"] for c in clauses}
     formatted_input = "\n".join(f"[{c['clause_code']}] {c['raw_text']}" for c in clauses)
 
-    response = client.models.generate_content(
-        model=MODEL_ID,
-        contents=formatted_input,
-        config=types.GenerateContentConfig(
+    raw_json = generate_with_fallback(
+            contents=formatted_input,
             system_instruction=SYSTEM_PROMPT,
-            response_mime_type="application/json",
             response_schema=CanonicalNotice,
             temperature=0.1,
-        ),
-    )
+        )
 
-    parsed_notice = CanonicalNotice.model_validate_json(response.text)
+    parsed_notice = CanonicalNotice.model_validate_json(raw_json)
     verified_notice = _validate_citations(parsed_notice, valid_codes)
     return verified_notice.model_dump()

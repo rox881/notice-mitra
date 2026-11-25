@@ -1,9 +1,12 @@
 from typing import Optional
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
+from app.eligibility import StudentProfile, evaluate_eligibility
 from app.extractor import extract_canonical_notice
 from app.parser import parse_document, parse_raw_text
+from app.translator import get_localized_notice
 
 app = FastAPI(title="Multilingual College Notice Assistant API")
 
@@ -17,9 +20,19 @@ app.add_middleware(
 ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg", "docx"}
 
 
+class EligibilityRequest(BaseModel):
+    canonical: dict
+    profile: StudentProfile
+
+
+class TranslateRequest(BaseModel):
+    canonical: dict
+    lang: str = "en"  # "en", "hi", or "mr"
+
+
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "stage": "2-extractor-ready"}
+    return {"status": "ok", "stage": "3-eligibility-and-translation-ready"}
 
 
 @app.post("/api/notices/parse")
@@ -53,7 +66,6 @@ async def analyze_notice_endpoint(
     file: Optional[UploadFile] = File(None),
     raw_text: Optional[str] = Form(None),
 ):
-    # Stage 1: Deterministic Clause Parsing
     if file and file.filename:
         ext = file.filename.lower().split(".")[-1]
         if ext not in ALLOWED_EXTENSIONS:
@@ -76,7 +88,6 @@ async def analyze_notice_endpoint(
     if not parsed["clauses"]:
         raise HTTPException(status_code=422, detail="No readable text clauses found in notice.")
 
-    # Stage 2: Canonical Extraction + Citation Guardrail
     try:
         canonical = extract_canonical_notice(parsed["clauses"])
     except Exception as e:
@@ -88,3 +99,18 @@ async def analyze_notice_endpoint(
         "clauses": parsed["clauses"],
         "canonical": canonical,
     }
+
+
+@app.post("/api/notices/eligibility")
+def check_eligibility_endpoint(payload: EligibilityRequest):
+    """Stage 3A: 100% Deterministic Eligibility Check (0 AI tokens)."""
+    return evaluate_eligibility(payload.canonical, payload.profile)
+
+
+@app.post("/api/notices/translate")
+def translate_notice_endpoint(payload: TranslateRequest):
+    """Stage 3B: Lazy-loaded Hindi/Marathi translation with cache (0 tokens on repeat)."""
+    try:
+        return get_localized_notice(payload.canonical, payload.lang)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
